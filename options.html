@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>You Just Had It - Settings</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f8f9fa;
+        color: #202124;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 32px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .header p {
+        font-size: 15px;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 32px;
+      }
+
+      .section {
+        margin-bottom: 40px;
+      }
+
+      .section:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f1f3f4;
+      }
+
+      .section-icon {
+        font-size: 24px;
+      }
+
+      .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #202124;
+      }
+
+      .section-description {
+        color: #5f6368;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 20px;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      .input-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #202124;
+        margin-bottom: 8px;
+      }
+
+      .input-hint {
+        font-size: 12px;
+        color: #5f6368;
+        margin-top: 4px;
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      input[type="text"]:focus,
+      textarea:focus {
+        border-color: #667eea;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+        font-family: "Monaco", "Courier New", monospace;
+      }
+
+      .list-container {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px;
+        background: #f8f9fa;
+        min-height: 60px;
+      }
+
+      .list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: white;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .list-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .list-item-text {
+        font-size: 14px;
+        color: #202124;
+        font-family: "Monaco", "Courier New", monospace;
+      }
+
+      .list-item-remove {
+        background: #fce8e6;
+        color: #c5221f;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .list-item-remove:hover {
+        background: #fad2cf;
+      }
+
+      .empty-list {
+        text-align: center;
+        color: #5f6368;
+        font-size: 14px;
+        padding: 20px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #5568d3;
+      }
+
+      .btn-secondary {
+        background: #f1f3f4;
+        color: #202124;
+      }
+
+      .btn-secondary:hover {
+        background: #e8eaed;
+      }
+
+      .btn-danger {
+        background: #fce8e6;
+        color: #c5221f;
+      }
+
+      .btn-danger:hover {
+        background: #fad2cf;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .alert.show {
+        display: block;
+      }
+
+      .alert-success {
+        background: #e6f4ea;
+        color: #137333;
+        border: 1px solid #b8e4c1;
+      }
+
+      .alert-info {
+        background: #e8f0fe;
+        color: #1967d2;
+        border: 1px solid #d2e3fc;
+      }
+
+      .rule-item {
+        background: white;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .rule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .rule-pattern {
+        font-family: "Monaco", "Courier New", monospace;
+        font-size: 14px;
+        font-weight: 600;
+        color: #667eea;
+      }
+
+      .rule-selectors {
+        font-size: 13px;
+        color: #5f6368;
+        font-family: "Monaco", "Courier New", monospace;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+      }
+
+      .default-rules {
+        background: #e8f0fe;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .default-rules-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1967d2;
+        margin-bottom: 8px;
+      }
+
+      .default-rules-list {
+        font-size: 13px;
+        color: #174ea6;
+        line-height: 1.6;
+      }
+
+      code {
+        background: #f1f3f4;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 13px;
+        font-family: "Monaco", "Courier New", monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>⚙️ Settings</h1>
+        <p>
+          Customize how "You Just Had It" captures and stores your browsing
+          history
+        </p>
+      </div>
+
+      <div class="content">
+        <div class="alert alert-success" id="successAlert">
+          ✓ Settings saved successfully!
+        </div>
+
+        <!-- Blacklist Section -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-icon">🚫</span>
+            <h2 class="section-title">Website Blacklist</h2>
+          </div>
+          <p class="section-description">
+            Prevent the extension from capturing pages from specific websites.
+            Add domains or URL patterns you want to ignore.
+          </p>
+
+          <div class="input-group">
+            <label class="input-label" for="blacklistInput"
+              >Add Website to Blacklist</label
+            >
+            <input
+              type="text"
+              id="blacklistInput"
+              placeholder="e.g., google.com, netflix.com, *.example.com"
+            />
+            <p class="input-hint">
+              Enter a domain (e.g., <code>google.com</code>) or use wildcards
+              (e.g., <code>*.google.com</code>). Press Enter or click Add to
+              save.
+            </p>
+            <div class="button-group">
+              <button class="btn btn-primary" id="addBlacklist">
+                ➕ Add to Blacklist
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Current Blacklist</label>
+            <div class="list-container" id="blacklistContainer">
+              <div class="empty-list">No blacklisted websites yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Extraction Rules Section -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-icon">🎯</span>
+            <h2 class="section-title">Custom Extraction Rules</h2>
+          </div>
+          <p class="section-description">
+            Define specific CSS selectors to extract content from particular
+            websites. When custom rules are active for a site,
+            <strong
+              >ONLY content from your specified selectors is extracted</strong
+            >
+            - everything else on the page is completely ignored. This provides
+            maximum storage efficiency and precision.
+          </p>
+
+          <div class="default-rules">
+            <div class="default-rules-title">⚡ How It Works:</div>
+            <div class="default-rules-list">
+              <strong>Without custom rules:</strong> Extracts main content,
+              removes ads/navigation (~2-4KB per page)<br />
+              <strong>With custom rules:</strong> Extracts ONLY from your
+              selectors, ignores everything else (~0.5-2KB per page)<br />
+              <strong>Example:</strong> YouTube rule with
+              <code>#description-inline-expander</code> saves ONLY video
+              description, not comments/recommendations/sidebar
+            </div>
+          </div>
+
+          <div class="default-rules">
+            <div class="default-rules-title">
+              📚 Built-in Platform Detection:
+            </div>
+            <div class="default-rules-list">
+              • <strong>YouTube:</strong> Automatically extracts video title,
+              channel name, and description<br />
+              • <strong>Twitter/X:</strong> Captures tweet text and author
+              information<br />
+              • <strong>Articles:</strong> Removes navigation, ads, and focuses
+              on main content<br />
+              <em
+                >Add custom rules to override these defaults with your own
+                selectors</em
+              >
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="rulePattern">Website Pattern</label>
+            <input
+              type="text"
+              id="rulePattern"
+              placeholder="e.g., youtube.com, reddit.com/r/*"
+            />
+            <p class="input-hint">
+              Enter a domain or URL pattern to match (e.g.,
+              <code>youtube.com</code>, <code>*.reddit.com</code>)
+            </p>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="ruleSelectors"
+              >CSS Selectors (one per line)</label
+            >
+            <textarea
+              id="ruleSelectors"
+              placeholder="e.g.,&#10;#description-text-container&#10;.article-content&#10;[data-testid='tweet-text']"
+            ></textarea>
+            <p class="input-hint">
+              Enter CSS selectors to extract content from. Each selector on a
+              new line.<br />
+              <strong>Important:</strong> When rules exist, ONLY content from
+              these selectors is captured - everything else is ignored.<br />
+              Example for YouTube:
+              <code>#description-inline-expander</code> (saves ONLY video
+              description)<br />
+              Example for Reddit:
+              <code>[data-test-id='post-content']</code> (saves ONLY post
+              text)<br />
+              Example for Twitter: <code>[data-testid='tweetText']</code> (saves
+              ONLY tweet text)
+            </p>
+            <div class="button-group">
+              <button class="btn btn-primary" id="addRule">➕ Add Rule</button>
+              <button class="btn btn-secondary" id="clearRuleForm">
+                Clear Form
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Custom Rules</label>
+            <div id="rulesContainer">
+              <div class="empty-list">No custom rules yet</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="section">
+          <div class="section-header">
+            <span class="section-icon">⚠️</span>
+            <h2 class="section-title">Danger Zone</h2>
+          </div>
+          <p class="section-description">
+            These actions cannot be undone. Proceed with caution.
+          </p>
+
+          <div class="button-group">
+            <button class="btn btn-danger" id="clearAllSettings">
+              Reset All Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>
