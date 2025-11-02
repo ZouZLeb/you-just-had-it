@@ -490,7 +490,7 @@ git clone https://github.com/yourusername/you-just-had-it.git
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ---
 
