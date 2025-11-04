@@ -4,6 +4,7 @@ let allPages = [];
 let filteredPages = [];
 let currentFilter = "all";
 let currentModalUrl = null;
+let currentSearchTerms = []; // Store current search terms for highlighting
 
 // Initialize on load
 document.addEventListener("DOMContentLoaded", async () => {
@@ -79,6 +80,7 @@ function setupEventListeners() {
 }
 
 function applyFilters() {
+  currentSearchTerms = []; // Clear search terms when applying filters
   if (currentFilter === "all") {
     filteredPages = [...allPages];
   } else {
@@ -93,7 +95,17 @@ function performSearch(query) {
     return;
   }
 
-  const lowerQuery = query.toLowerCase();
+  // Split query into individual words and clean them
+  const searchTerms = query
+    .toLowerCase()
+    .split(/\s+/) // Split by whitespace
+    .filter((term) => term.length > 0); // Remove empty strings
+
+  if (searchTerms.length === 0) {
+    applyFilters();
+    renderResults();
+    return;
+  }
 
   // Search with current filter applied
   const basePages =
@@ -101,7 +113,9 @@ function performSearch(query) {
       ? allPages
       : allPages.filter((page) => page.platform === currentFilter);
 
-  filteredPages = basePages.filter((page) => {
+  // Score-based search: pages matching more terms rank higher
+  const scoredPages = basePages.map((page) => {
+    // Create searchable text from page
     const searchText = `
       ${page.title} 
       ${page.description} 
@@ -112,10 +126,44 @@ function performSearch(query) {
       ${page.tags.join(" ")}
     `.toLowerCase();
 
-    return searchText.includes(lowerQuery);
+    // Count how many search terms match
+    let matchCount = 0;
+    let matchedTerms = [];
+
+    searchTerms.forEach((term) => {
+      if (searchText.includes(term)) {
+        matchCount++;
+        matchedTerms.push(term);
+      }
+    });
+
+    return {
+      page,
+      score: matchCount,
+      matchedTerms,
+      totalTerms: searchTerms.length,
+    };
   });
 
+  // Filter to pages that match at least one term
+  const matchedPages = scoredPages
+    .filter((item) => item.score > 0)
+    .sort((a, b) => {
+      // Sort by score (descending) - pages matching more terms appear first
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      // If same score, sort by last visit (most recent first)
+      return b.page.lastVisit - a.page.lastVisit;
+    });
+
+  filteredPages = matchedPages.map((item) => item.page);
+
+  // Store search info for highlighting
+  currentSearchTerms = searchTerms;
+
   renderResults();
+  updateStats();
 }
 
 function renderResults() {
@@ -191,6 +239,122 @@ function attachEventHandlers() {
   });
 }
 
+function createResultCard(page) {
+  const timeAgo = getTimeAgo(page.lastVisit);
+  const platformEmoji = getPlatformEmoji(page.platform);
+  const firstVisitDate = new Date(page.firstVisit).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  // Truncate content for preview
+  const contentPreview = page.content ? page.content.substring(0, 500) : "";
+  const hasMoreContent = page.content && page.content.length > 500;
+
+  // Highlight search terms if searching
+  let displayTitle = escapeHtml(page.title);
+  let displayDescription = page.description ? escapeHtml(page.description) : "";
+
+  if (currentSearchTerms.length > 0) {
+    displayTitle = highlightTerms(displayTitle, currentSearchTerms);
+    displayDescription = displayDescription
+      ? highlightTerms(displayDescription, currentSearchTerms)
+      : "";
+  }
+
+  return `
+    <div class="result-item" data-url="${escapeHtml(page.url)}" data-id="${
+    page.id
+  }">
+      <div class="result-header">
+        ${
+          page.favicon
+            ? `<img src="${escapeHtml(
+                page.favicon
+              )}" class="result-favicon" onerror="this.style.display='none'">`
+            : `<span class="result-favicon">${platformEmoji}</span>`
+        }
+        <div class="result-content">
+          <div class="result-title">${displayTitle}</div>
+          <div class="result-meta">
+            <span class="result-domain">${escapeHtml(page.domain)}</span>
+            <span>•</span>
+            <span>${timeAgo}</span>
+            ${
+              page.visitCount > 1
+                ? `<span class="visit-badge">👁️ ${page.visitCount} visit${
+                    page.visitCount > 1 ? "s" : ""
+                  }</span>`
+                : ""
+            }
+          </div>
+          ${
+            displayDescription
+              ? `<div class="result-description">${displayDescription}</div>`
+              : ""
+          }
+          ${
+            contentPreview
+              ? `<div class="result-preview" id="preview-${page.id}">
+                 ${escapeHtml(contentPreview)}${hasMoreContent ? "..." : ""}
+               </div>`
+              : ""
+          }
+        </div>
+      </div>
+      
+      <div class="result-actions">
+        <button class="action-btn primary open-btn" title="Open page">
+          🔗 Open
+        </button>
+        ${
+          contentPreview
+            ? `<button class="action-btn preview-btn" data-id="${page.id}" title="Toggle content preview">
+               👁️ Preview
+             </button>`
+            : ""
+        }
+        ${
+          hasMoreContent || (contentPreview && page.content.length > 200)
+            ? `<button class="action-btn view-content-btn" data-id="${page.id}" title="View full content">
+               📄 Full Content
+             </button>`
+            : ""
+        }
+        <button class="action-btn danger delete-btn" data-id="${
+          page.id
+        }" title="Delete this page">
+          🗑️ Delete
+        </button>
+      </div>
+      
+      <div style="font-size: 11px; color: #80868b; margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1f3f4;">
+        First visited: ${firstVisitDate} • Last visited: ${timeAgo}
+      </div>
+    </div>
+  `;
+}
+
+// Highlight search terms in text
+function highlightTerms(text, terms) {
+  let result = text;
+
+  terms.forEach((term) => {
+    // Create case-insensitive regex
+    const regex = new RegExp(`(${escapeRegex(term)})`, "gi");
+    result = result.replace(regex, '<span class="highlight">$1</span>');
+  });
+
+  return result;
+}
+
+// Escape special regex characters
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Create result card
 function createResultCard(page) {
   const timeAgo = getTimeAgo(page.lastVisit);
   const platformEmoji = getPlatformEmoji(page.platform);
@@ -368,6 +532,15 @@ function updateStats() {
 
   if (totalPages === 0) {
     statsText.textContent = "No pages captured yet";
+    return;
+  }
+
+  // Show search-specific stats if searching
+  if (currentSearchTerms.length > 0) {
+    const matchInfo = `Showing ${filteredPages.length} result${
+      filteredPages.length !== 1 ? "s" : ""
+    } matching "${currentSearchTerms.join(" ")}"`;
+    statsText.textContent = `${matchInfo} • ${totalPages} total pages`;
   } else {
     statsText.textContent = `${filteredPages.length} of ${totalPages} pages • ${totalVisits} total visits`;
   }
