@@ -47,10 +47,17 @@ function handleTabChange(tab) {
 
 async function capturePage(tab) {
   try {
-    // Check if URL is blacklisted
+    // CRITICAL: Check sensitive sites FIRST (before any other checks)
+    const isSensitive = await checkSensitiveSite(tab.url, tab.title);
+    if (isSensitive) {
+      console.log("🛡️ Sensitive site detected, skipping capture:", tab.url);
+      return;
+    }
+
+    // Check if URL is blacklisted (user-defined)
     const isBlacklisted = await checkBlacklist(tab.url);
     if (isBlacklisted) {
-      console.log("Page is blacklisted, skipping capture:", tab.url);
+      console.log("Blacklisted site, skipping capture:", tab.url);
       return;
     }
 
@@ -70,6 +77,223 @@ async function capturePage(tab) {
     }
   } catch (error) {
     console.error("Error capturing page:", error);
+  }
+}
+
+async function checkSensitiveSite(url, title = "") {
+  try {
+    const urlLower = url.toLowerCase();
+    const titleLower = title.toLowerCase();
+
+    // WHITELIST: Sites that are safe even if they contain sensitive keywords
+    const SAFE_DOMAINS = [
+      // News & Media
+      "nytimes.com",
+      "wsj.com",
+      "washingtonpost.com",
+      "reuters.com",
+      "bloomberg.com",
+      "forbes.com",
+      "fortune.com",
+      "businessinsider.com",
+      "cnbc.com",
+      "cnn.com",
+      "bbc.com",
+      "theguardian.com",
+      "npr.org",
+      "apnews.com",
+      "usatoday.com",
+      "latimes.com",
+      "chicagotribune.com",
+
+      // Social Media (articles/posts are safe, login pages are not)
+      "twitter.com",
+      "x.com",
+      "reddit.com",
+      "linkedin.com",
+      "facebook.com",
+      "instagram.com",
+      "tiktok.com",
+
+      // Content Platforms
+      "youtube.com",
+      "medium.com",
+      "substack.com",
+      "wordpress.com",
+      "blogger.com",
+      "tumblr.com",
+      "quora.com",
+      "stackoverflow.com",
+
+      // Wikipedia & Education
+      "wikipedia.org",
+      "wikihow.com",
+      "britannica.com",
+      "khanacademy.org",
+      "coursera.org",
+      "udemy.com",
+
+      // Tech & Developer
+      "github.com",
+      "gitlab.com",
+      "stackoverflow.com",
+      "dev.to",
+      "hackernews.com",
+      "techcrunch.com",
+      "theverge.com",
+      "arstechnica.com",
+
+      // Finance News (not banking)
+      "marketwatch.com",
+      "seekingalpha.com",
+      "fool.com",
+      "investopedia.com",
+    ];
+
+    // Check if domain is whitelisted (safe for content)
+    const domain = new URL(url).hostname.replace("www.", "");
+    for (const safeDomain of SAFE_DOMAINS) {
+      if (domain.includes(safeDomain)) {
+        // Still block login/signin pages on these platforms
+        if (
+          urlLower.includes("/login") ||
+          urlLower.includes("/signin") ||
+          urlLower.includes("/sign-in") ||
+          urlLower.includes("/authenticate") ||
+          urlLower.includes("accounts.") ||
+          urlLower.includes("account.")
+        ) {
+          console.log(`🛡️ Blocked login page on safe domain: ${url}`);
+          return true;
+        }
+        // Safe domain, allow content
+        console.log(`✅ Safe content domain: ${domain}`);
+        return false;
+      }
+    }
+
+    // CRITICAL DOMAINS: Always block these exact domains regardless of path
+    const CRITICAL_DOMAINS = [
+      "chase.com",
+      "bankofamerica.com",
+      "wellsfargo.com",
+      "citibank.com",
+      "usbank.com",
+      "capitalone.com",
+      "pnc.com",
+      "ally.com",
+      "paypal.com",
+      "venmo.com",
+      "zelle.com",
+      "cashapp.com",
+      "mail.google.com",
+      "outlook.live.com",
+      "mail.yahoo.com",
+      "mychart.com",
+      "patient.",
+      "healthrecord",
+      "irs.gov",
+      "ssa.gov",
+    ];
+
+    for (const criticalDomain of CRITICAL_DOMAINS) {
+      if (domain.includes(criticalDomain)) {
+        console.log(`🛡️ Blocked critical domain: ${criticalDomain}`);
+        return true;
+      }
+    }
+
+    // Check for authentication/account management paths (high priority)
+    const CRITICAL_PATHS = [
+      "/login",
+      "/signin",
+      "/sign-in",
+      "/log-in",
+      "/authenticate",
+      "/auth/",
+      "/account/settings",
+      "/account/security",
+      "/myaccount",
+      "/checkout",
+      "/payment",
+      "/billing",
+      "/portal",
+      "/patient-portal",
+      "/member-portal",
+    ];
+
+    const urlPath = new URL(url).pathname.toLowerCase();
+    for (const path of CRITICAL_PATHS) {
+      if (urlPath.includes(path)) {
+        console.log(`🛡️ Blocked by critical path: ${path}`);
+        return true;
+      }
+    }
+
+    // Check for sensitive patterns ONLY if not on a content platform
+    // These patterns suggest actual sensitive pages, not content about them
+    const SENSITIVE_URL_PATTERNS = [
+      "online-banking",
+      "onlinebanking",
+      "digital-banking",
+      "creditcard-login",
+      "credit-card-account",
+      "patient-access",
+      "medical-records",
+      "health-records",
+      "insurance-member",
+      "claims-portal",
+      "tax-return",
+      "tax-filing",
+    ];
+
+    for (const pattern of SENSITIVE_URL_PATTERNS) {
+      if (urlLower.includes(pattern)) {
+        console.log(`🛡️ Blocked by URL pattern: ${pattern}`);
+        return true;
+      }
+    }
+
+    // Check title for authentication indicators (not just keywords)
+    const AUTH_TITLE_PATTERNS = [
+      "sign in to",
+      "log in to",
+      "login to",
+      "sign in -",
+      "log in -",
+      "login -",
+      "member login",
+      "customer login",
+      "patient login",
+      "account login",
+      "secure login",
+      "password reset",
+      "forgot password",
+      "verify your identity",
+      "two-factor authentication",
+    ];
+
+    for (const pattern of AUTH_TITLE_PATTERNS) {
+      if (titleLower.includes(pattern)) {
+        console.log(`🛡️ Blocked by auth title pattern: ${pattern}`);
+        return true;
+      }
+    }
+
+    // If we got here, it's likely safe content (article, blog, social post)
+    return false;
+  } catch (error) {
+    console.error("Error checking sensitive site:", error);
+    // Only block on error if it looks like a suspicious URL
+    const urlLower = url.toLowerCase();
+    if (
+      urlLower.includes("login") ||
+      urlLower.includes("account") ||
+      urlLower.includes("portal")
+    ) {
+      return true; // Fail-safe for suspicious URLs
+    }
+    return false; // Allow on error for normal-looking URLs
   }
 }
 
